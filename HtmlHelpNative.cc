@@ -15,17 +15,22 @@ void HtmlHelpWithOptionalString(UINT command, const Nan::FunctionCallbackInfo<v8
   }
   v8::String::Value chmPath(info[0]->ToString());
 
+  HWND helpWindow;
   if (info.Length() > 1 && !info[1]->IsNull() && !info[1]->IsUndefined()) {
     if (!info[1]->IsString()) {
       Nan::ThrowTypeError("Second argument must be a string");
       return;
     }
     v8::String::Value keyword(info[1]->ToString());
-    HtmlHelp(NULL, (LPCWSTR) *chmPath, command, (DWORD_PTR) *keyword);
+    helpWindow = HtmlHelp(NULL, (LPCWSTR) *chmPath, command, (DWORD_PTR) *keyword);
   }
   else {
-    HtmlHelp(NULL, (LPCWSTR) *chmPath, command, NULL);
+    helpWindow = HtmlHelp(NULL, (LPCWSTR) *chmPath, command, NULL);
   }
+  // Work around an issue in NW.js where the help window opens behind the main window:
+  SetWindowPos(helpWindow, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
+  // Set the window back to being a non-topmost window, so that the NW.js main window can be brought in front of it:
+  SetWindowPos(helpWindow, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE);
 }
 
 void DisplayIndex(const Nan::FunctionCallbackInfo<v8::Value>& info) {
